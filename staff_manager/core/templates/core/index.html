@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>인원 편성 및 팀 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 인원 카드에 마우스를 올렸을 때 효과 */
+        .person-label { cursor: pointer; transition: 0.2s; }
+        .person-label:hover { background-color: #f8f9fa; }
+
+        /* 체크박스가 선택되면 라벨의 색상을 파란색으로 변경 */
+        input[type="checkbox"]:checked + label {
+            background-color: #e8f0fe;
+            border-color: #0d6efd;
+            color: #0d6efd;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>👥 인원 편성 및 팀 구성 시스템</h2>
+            <a href="/admin" class="btn btn-outline-dark btn-sm">관리자 페이지 (명단 업로드)</a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-7">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <span class="fw-bold">1. 대기 명단 (팀 미배정 인원)</span>
+                            <span class="badge bg-light text-primary">{{ people.count }}명</span>
+                        </div>
+
+                        <div class="card-body bg-light" style="max-height: 600px; overflow-y: auto;">
+                            <div class="row g-2">
+                                {% for person in people %}
+                                <div class="col-6 col-md-4">
+                                    <input type="checkbox" class="btn-check" name="selected_people"
+                                           id="p{{ person.id }}" value="{{ person.id }}" autocomplete="off">
+
+                                    <label class="btn btn-outline-secondary w-100 text-start person-label" for="p{{ person.id }}">
+                                        <small class="text-muted" style="font-size: 0.8em;">[{{ person.position }}]</small><br>
+                                        <span>{{ person.name }}</span>
+                                    </label>
+                                </div>
+                                {% empty %}
+                                <div class="col-12 text-center py-5 text-muted">
+                                    <h5>편성할 대기 인원이 없습니다.</h5>
+                                    <p class="small">모든 인원이 팀에 배정되었거나,<br>관리자 페이지에서 명단을 업로드해야 합니다.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="card-footer p-3">
+                            <label class="form-label fw-bold">2. 새 팀 만들기</label>
+                            <div class="input-group">
+                                <input type="text" name="team_name" class="form-control"
+                                       placeholder="예: A팀, 안내팀, 음향팀..." required>
+                                <button class="btn btn-success fw-bold" type="submit">팀 생성 +</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-dark text-white fw-bold">
+                        📋 생성된 팀 현황
+                    </div>
+                    <div class="card-body bg-light" style="max-height: 750px; overflow-y: auto;">
+                        {% for team in teams %}
+                        <div class="card mb-3 border-secondary">
+                            <div class="card-body position-relative">
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <a href="{% url 'edit_team' team.id %}" class="btn btn-sm btn-outline-primary me-1">수정</a>
+                                    <a href="{% url 'delete_team' team.id %}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('[' + '{{ team.name }}' + '] 팀을 삭제하시겠습니까?\n포함된 인원은 다시 대기 명단으로 돌아갑니다.')">
+                                        삭제
+                                    </a>
+                                </div>
+
+                                <h5 class="card-title fw-bold text-dark">
+                                    {{ team.name }}
+                                    <span class="badge rounded-pill bg-secondary ms-1" style="font-size: 0.6em;">
+                                        {{ team.members.count }}명
+                                    </span>
+                                </h5>
+                                <h6 class="card-subtitle mb-2 text-muted border-bottom pb-2"></h6>
+
+                                <div class="card-text">
+                                    {% for member in team.members.all %}
+                                    <span class="badge bg-white text-dark border border-secondary mb-1">
+                                        <span class="text-muted">{{ member.position }}</span> {{ member.name }}
+                                    </span>
+                                    {% empty %}
+                                    <span class="text-muted small">배정된 팀원이 없습니다.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-5">
+                            <p>아직 생성된 팀이 없습니다.<br>왼쪽에서 인원을 선택해 팀을 만들어주세요.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="card col-md-6 mx-auto">
+    <div class="card-header">CSV 명단 일괄 등록</div>
+    <div class="card-body">
+        <p>CSV 파일 형식: <strong>이름,연락처</strong> 순서로 작성해주세요.</p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">업로드</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

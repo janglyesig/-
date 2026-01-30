@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-85z^-z)gsm^3cz0t%_pp$m33v38i82etuy=hz*lf^(8hcosss1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -118,3 +118,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# settings.py
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://elvera-crimpy-unfortunately.ngrok-free.dev',
+]
+
+
+

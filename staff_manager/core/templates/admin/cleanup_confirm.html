@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="padding: 20px; background: #fff3f3; border: 1px solid #ffcccc;">
+    <h2>⚠️ 날짜 경과 데이터 정리</h2>
+    <p>현재 날짜가 지난 공연의 <strong>인원 편성 데이터 {{ count }}건</strong>을 삭제하시겠습니까?</p>
+    <p>※ 주의: <strong>공연 기록(날짜, 승인여부 등)은 삭제되지 않고 유지</strong>되며, 인원 명단만 삭제됩니다.</p>
+    <p>※ 또한, 날짜가 지난 '승인 대기' 공연은 일괄 <strong>승인 완료</strong> 처리됩니다.</p>
+    
+    <ul>
+        {% for perf in performances|slice:":5" %}
+            <li>{{ perf.title }} ({{ perf.date }})</li>
+        {% endfor %}
+        {% if performances.count > 5 %}
+            <li>...외 다수</li>
+        {% endif %}
+    </ul>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="확인 및 삭제/승인 진행" style="background: #cc0000; color: white; padding: 10px; border: none; cursor: pointer;">
+        <a href="../" class="button" style="margin-left: 10px;">취소</a>
+    </form>
+</div>
+{% endblock %}

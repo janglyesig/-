@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>{{ performance.title }} 편성 및 관리</title>
+<style>
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f6f8; padding: 20px; margin: 0; }
+    .container { width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-sizing: border-box; height: 95vh; display: flex; flex-direction: column; }
+
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 15px; flex-shrink: 0; }
+    .title-area h2 { margin: 0; font-size: 1.6em; }
+    .badge { padding: 5px 12px; border-radius: 20px; color: white; font-size: 0.6em; vertical-align: middle; }
+    .pending { background: #ffc107; color:#333; } .approved { background: #28a745; }
+    .rejected { background: #dc3545; } .canceled { background: #6c757d; }
+
+    .btn-group { display: flex; gap: 5px; align-items: center; }
+    .btn { padding: 10px 18px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; font-size: 0.9em; }
+    .btn-approve { background: #28a745; } .btn-approve:hover { background: #218838; }
+    .btn-reject { background: #dc3545; } .btn-reject:hover { background: #c82333; }
+    .btn-cancel { background: #6c757d; } .btn-cancel:hover { background: #5a6268; }
+    .btn-del { background: #343a40; } .btn-del:hover { background: #23272b; }
+
+    /* [수정됨] 목록 버튼 스타일 */
+    .btn-back { background: #607d8b; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; font-weight:bold; font-size: 0.9em; }
+    .btn-back:hover { background: #455a64; }
+
+    .layout { display: flex; gap: 20px; flex: 1; overflow: hidden; }
+    .personnel-panel { flex: 0 0 300px; display: flex; flex-direction: column; border: 1px solid #ddd; background: #fafafa; border-radius: 8px; }
+    .teams-panel { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding-right: 5px; }
+
+    .import-bar { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; border: 1px solid #90caf9; flex-shrink: 0; }
+    .btn-import { background: #1976d2; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+    .team-card { background: white; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 20px; }
+    .team-head { padding: 10px 20px; background: #fcfcfc; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+    .cat-badge { font-size: 0.7em; padding: 4px 8px; border-radius: 4px; color: white; margin-right:5px; }
+    .cat-general { background: #1976d2; } .cat-prep { background: #f57c00; } .cat-religion { background: #7b1fa2; }
+
+    .member-area { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+    .member-card { background: #f5f5f5; padding: 10px; border-radius: 6px; text-align: center; border: 1px solid #eee; position: relative; }
+    .role-badge { display: block; font-size: 0.8em; font-weight: bold; margin-bottom: 5px; }
+    .role-p { color: #d32f2f; } .role-t { color: #1565c0; } .role-m { color: #2e7d32; }
+
+    .person-list { overflow-y: auto; padding: 10px; flex: 1; }
+    .person-item { background: white; border: 1px solid #eee; padding: 8px; margin-bottom: 5px; display: flex; align-items: center; cursor: pointer; }
+    .person-item:hover { background:#e1f5fe; }
+
+    .add-action-bar { padding: 10px; background: #f0f4c3; display: flex; justify-content: flex-end; gap: 10px; border-top:1px solid #dce775; border-radius: 0 0 8px 8px; }
+</style>
+<script>
+    function toggleAll(source) { document.getElementsByName('person_ids').forEach(cb => cb.checked = source.checked); }
+    function promptReason(form) {
+        var r = prompt("사유를 입력해주세요:");
+        if (!r) return false;
+        form.querySelector('input[name=reason]').value = r;
+        return true;
+    }
+    function addToTeam(teamId) {
+        if(document.querySelectorAll('input[name="person_ids"]:checked').length === 0) { alert("인원을 선택하세요."); return; }
+        const form = document.getElementById('form-add-' + teamId);
+        const con = document.getElementById('hidden-container-' + teamId);
+        con.innerHTML = '';
+        document.querySelectorAll('input[name="person_ids"]:checked').forEach(cb => {
+            const i = document.createElement('input'); i.type = 'hidden'; i.name = 'person_ids'; i.value = cb.value;
+            con.appendChild(i);
+        });
+        form.submit();
+    }
+</script>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title-area">
+            <h2>{{ performance.title }} <span class="badge {{ performance.status }}">{{ performance.get_status_display }}</span></h2>
+            <div style="color:#666; margin-top:5px;">{{ performance.date|date:"Y-m-d H:i" }} | {{ performance.venue }}</div>
+            {% if performance.reason %}
+                <div style="color:red; font-size:0.9em; margin-top:5px; background:#ffebee; display:inline-block; padding:3px 8px; border-radius:4px;">
+                    ⚠️ 사유: {{ performance.reason }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="btn-group">
+            <form action="{% url 'core:update_status' performance.pk %}" method="post">{% csrf_token %}
+                <button name="action" value="approve" class="btn btn-approve">✔ 승인</button>
+            </form>
+            <form action="{% url 'core:update_status' performance.pk %}" method="post" onsubmit="return promptReason(this);">{% csrf_token %}
+                <input type="hidden" name="reason">
+                <button name="action" value="reject" class="btn btn-reject">⛔ 반려</button>
+            </form>
+            <form action="{% url 'core:update_status' performance.pk %}" method="post" onsubmit="return promptReason(this);">{% csrf_token %}
+                <input type="hidden" name="reason">
+                <button name="action" value="cancel" class="btn btn-cancel">🚫 취소</button>
+            </form>
+            <form action="{% url 'core:delete_performance' performance.pk %}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">{% csrf_token %}
+                <button class="btn btn-del">🗑 삭제</button>
+            </form>
+
+            <span style="border-left:1px solid #ccc; height:30px; margin:0 5px;"></span>
+
+            <a href="{% url 'core:daily_schedule' %}?date={{ performance.date|date:'Y-m-d' }}" class="btn-back">
+                🔙 날짜별 목록
+            </a>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="personnel-panel">
+            <div style="padding:15px; background:#e3f2fd; font-weight:bold; border-bottom:1px solid #ddd; display:flex; justify-content:space-between;">
+                <span>📋 대기 인원</span>
+                <label style="font-size:0.8em; cursor:pointer;"><input type="checkbox" onclick="toggleAll(this)"> 전체선택</label>
+            </div>
+            <div class="person-list">
+                {% for p in available_personnel %}
+                <label class="person-item">
+                    <input type="checkbox" name="person_ids" value="{{ p.id }}" style="transform:scale(1.3); margin-right:10px;">
+                    <div>
+                        <strong>{{ p.name }}</strong>
+                        <div style="font-size:0.8em; color:#888;">
+                            {% if p.standing_team %}[{{ p.standing_team.name }}]{% else %}(무소속){% endif %}
+                        </div>
+                    </div>
+                </label>
+                {% empty %}
+                <div style="padding:20px; text-align:center; color:#999;">모든 인원이 배정되었습니다.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="teams-panel">
+            <form action="{% url 'core:import_standing_team' performance.pk %}" method="post" class="import-bar">
+                {% csrf_token %}
+                <span style="font-size:1.5em;">📥</span>
+                <strong style="color:#1565c0;">팀 불러오기:</strong>
+                <select name="standing_team_id" style="padding:8px; border:1px solid #90caf9; border-radius:4px; flex:1;">
+                    <option value="">-- 만들어둔 고정 팀 선택 --</option>
+                    {% for st in standing_teams %}
+                    <option value="{{ st.id }}">[{{ st.get_category_display }}] {{ st.name }} ({{ st.members.count }}명)</option>
+                    {% endfor %}
+                </select>
+                <button class="btn-import">가져오기</button>
+            </form>
+
+            {% for team in teams %}
+            <div class="team-card" style="border-top: 4px solid {% if team.category == 'general' %}#1976d2{% elif team.category == 'prep' %}#f57c00{% else %}#7b1fa2{% endif %};">
+                <div class="team-head">
+                    <strong>
+                        <span class="cat-badge {% if team.category == 'general' %}cat-general{% elif team.category == 'prep' %}cat-prep{% else %}cat-religion{% endif %}">
+                            {{ team.get_category_display }}
+                        </span>
+                        {{ team.name }}
+                    </strong>
+                    <a href="{% url 'core:delete_team' team.pk %}" onclick="return confirm('이 팀을 공연에서 뺍니까?')" style="color:red; text-decoration:none; font-weight:bold;">× 팀 삭제</a>
+                </div>
+
+                <div class="member-area">
+                    {% for m in team.members.all %}
+                    <div class="member-card">
+                        <span class="role-badge {% if m.role_type == 'part_leader' %}role-p{% elif m.role_type == 'team_leader' %}role-t{% else %}role-m{% endif %}">
+                            {{ m.get_role_type_display }}
+                        </span>
+                        {{ m.display_name }}
+                        <a href="{% url 'core:delete_assignment' m.pk %}" style="position:absolute; top:5px; right:8px; color:#ccc; text-decoration:none; font-weight:bold;">×</a>
+                    </div>
+                    {% empty %}
+                    <div style="color:#ccc; text-align:center; width:100%;">인원 없음</div>
+                    {% endfor %}
+                </div>
+
+                <div class="add-action-bar">
+                    <form id="form-add-{{ team.pk }}" action="{% url 'core:add_members_to_team' team.pk %}" method="post" style="display:flex; gap:5px; align-items:center;">
+                        {% csrf_token %}
+                        <div id="hidden-container-{{ team.pk }}"></div>
+                        <span style="font-size:0.8em;">체크한 인원을 ▶</span>
+                        <select name="role_type" style="padding:5px; border-radius:4px; border:1px solid #ccc;">
+                            <option value="member">팀원으로</option>
+                            <option value="team_leader">팀장으로</option>
+                            <option value="part_leader">파트장으로</option>
+                        </select>
+                        <button type="button" onclick="addToTeam({{ team.pk }})" style="background:#827717; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">추가</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

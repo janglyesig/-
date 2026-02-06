@@ -1,16 +1,13 @@
-# core/forms.py
 from django import forms
-from .models import Assignment
+from .models import PerformanceTeam
 
-class CSVUploadForm(forms.Form):
-    file = forms.FileField(label="CSV 파일 선택")
-
-class AssignmentForm(forms.ModelForm):
+class TeamForm(forms.ModelForm):
     class Meta:
-        model = Assignment
-        fields = ['person', 'task', 'detail']
+        model = PerformanceTeam
+        fields = ['name', 'start_date', 'end_date', 'description']
         widgets = {
-            'person': forms.Select(attrs={'class': 'form-select'}),
-            'task': forms.Select(attrs={'class': 'form-select'}),
-            'detail': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '공연명 또는 메모 입력'}),
+            # 사용자가 달력에서 날짜와 시간을 쉽게 고를 수 있게 합니다.
+            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
         }

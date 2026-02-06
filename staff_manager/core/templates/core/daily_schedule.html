@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>날짜별 일정</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f6f8; margin: 0; }
+    /* 너비 98% 사용 */
+    .container { width: 98%; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-sizing: border-box; }
+
+    .date-picker { display: flex; gap: 10px; margin-bottom: 20px; padding: 20px; background: #e3f2fd; border-radius: 8px; align-items: center; }
+    input[type="date"] { padding: 10px; font-size: 1.2em; border: 1px solid #ccc; border-radius: 4px; }
+    .search-btn { background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1.1em; }
+
+    .card-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }
+    .card { background: white; border: 1px solid #ddd; padding: 25px; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .card:hover { border-color: #007bff; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+    .home-btn { font-size: 1.2em; text-decoration: none; color: #555; font-weight: bold; margin-bottom: 20px; display: inline-block; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'core:main_hub' %}" class="home-btn">🏠 홈으로</a>
+        <h2 style="margin-top:0;">📆 날짜별 일정 조회</h2>
+
+        <form method="get" class="date-picker">
+            <label style="font-size:1.2em;">날짜 선택:</label>
+            <input type="date" name="date" value="{{ target_date }}" required>
+            <button type="submit" class="search-btn">조회</button>
+        </form>
+
+        <h3 style="border-bottom:2px solid #eee; padding-bottom:10px;">{{ target_date }} 공연 목록 ({{ performances|length }}건)</h3>
+
+        <div class="card-list">
+            {% for p in performances %}
+            <div class="card" onclick="location.href='{% url 'core:performance_detail' p.pk %}'">
+                <h3 style="margin:0 0 10px 0; font-size:1.4em;">{{ p.title }}</h3>
+                <p style="color:#666; font-size:1.1em;">⏰ {{ p.date|date:"H:i" }} | 📍 {{ p.venue }}</p>
+                <div style="text-align:right;">
+                    <span style="background:#eee; padding:5px 10px; border-radius:10px; font-weight:bold;">{{ p.get_status_display }} ></span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="text-align:center; color:#999; grid-column: 1/-1; padding: 50px; font-size: 1.2em;">해당 날짜에 예정된 공연이 없습니다.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

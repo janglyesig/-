@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>인원 및 팀 관리</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f6f8; margin: 0; }
+    .container { width: 98%; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-sizing: border-box; }
+
+    .layout { display: flex; gap: 30px; height: 85vh; }
+
+    /* [왼쪽] 팀 관리 */
+    .col-left { flex: 0 0 300px; border-right: 1px solid #eee; padding-right: 20px; overflow-y: auto; }
+    .team-item { background: #f9f9f9; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; border: 1px solid #eee; align-items: center; }
+    .cat-badge { font-size: 0.7em; padding: 3px 6px; border-radius: 4px; color: white; margin-right: 5px; }
+    .cat-general { background: #1976d2; } .cat-prep { background: #f57c00; } .cat-religion { background: #7b1fa2; }
+
+    /* [오른쪽] 인원 명부 */
+    .col-right { flex: 1; display: flex; flex-direction: column; }
+
+    /* 상단 컨트롤 바 (일괄 배정) */
+    .control-bar { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #90caf9; }
+    .bulk-action { display: flex; gap: 10px; align-items: center; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f8f9fa; border-top: 2px solid #ddd; }
+    tr:hover { background: #f1f1f1; }
+
+    .input-box { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn-blue { background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+    .btn-assign { background: #007bff; color: white; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-green { background: #2e7d32; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; font-size: 0.9em; }
+
+    input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+</style>
+<script>
+    // 전체 선택 기능
+    function toggleAll(source) {
+        document.getElementsByName('person_ids').forEach(cb => cb.checked = source.checked);
+    }
+</script>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'core:main_hub' %}" style="text-decoration:none; color:#555; font-weight:bold; display:block; margin-bottom:20px;">🏠 홈으로 돌아가기</a>
+
+        <div class="layout">
+            <div class="col-left">
+                <h3 style="margin-top:0;">🏢 고정 팀 목록</h3>
+
+                <form action="{% url 'core:create_standing_team' %}" method="post" style="background:#eee; padding:15px; border-radius:8px; margin-bottom:20px;">
+                    {% csrf_token %}
+                    <div style="margin-bottom:5px;">
+                        <select name="category" class="input-box" style="width:100%;">
+                            <option value="general">일반팀</option>
+                            <option value="prep">준비팀</option>
+                            <option value="religion">종교팀</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" name="name" placeholder="새 팀 이름" class="input-box" style="flex:1;" required>
+                        <button class="btn-blue">생성</button>
+                    </div>
+                </form>
+
+                {% for team in standing_teams %}
+                <div class="team-item">
+                    <div>
+                        <span class="cat-badge {% if team.category == 'general' %}cat-general{% elif team.category == 'prep' %}cat-prep{% else %}cat-religion{% endif %}">
+                            {{ team.get_category_display }}
+                        </span>
+                        <strong>{{ team.name }}</strong>
+                        <span style="font-size:0.8em; color:#666;">({{ team.members.count }}명)</span>
+                    </div>
+                    <a href="{% url 'core:delete_standing_team' team.pk %}" onclick="return confirm('팀을 삭제하시겠습니까? (소속 인원은 무소속이 됩니다)')" style="color:red; text-decoration:none; font-weight:bold;">×</a>
+                </div>
+                {% empty %}
+                <p style="color:#999; text-align:center;">생성된 팀이 없습니다.</p>
+                {% endfor %}
+            </div>
+
+            <div class="col-right">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h2 style="margin:0;">👥 인원 명부 관리</h2>
+                    <a href="{% url 'core:personnel_add' %}" class="btn-green">+ 인원 개별 추가</a>
+                </div>
+
+                <form action="{% url 'core:assign_personnel_bulk' %}" method="post" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+                    {% csrf_token %}
+
+                    <div class="control-bar">
+                        <div class="bulk-action">
+                            <strong>선택한 인원을:</strong>
+                            <span style="font-size:1.5em;">👉</span>
+                            <select name="standing_team_id" class="input-box" required>
+                                <option value="">-- 이동할 팀 선택 --</option>
+                                <option value="none">❌ 소속 해제 (팀에서 빼기)</option>
+                                {% for team in standing_teams %}
+                                <option value="{{ team.id }}">
+                                    [{{ team.get_category_display }}] {{ team.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn-assign">이동 / 배정하기</button>
+                        </div>
+                        <div style="color:#666; font-size:0.9em;">
+                            * 체크박스로 여러 명을 선택하세요.
+                        </div>
+                    </div>
+
+                    <div style="flex:1; overflow-y:auto; border:1px solid #eee;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="50"><input type="checkbox" onclick="toggleAll(this)"></th>
+                                    <th>이름</th>
+                                    <th>현재 소속 팀</th>
+                                    <th>직급</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in personnel %}
+                                <tr>
+                                    <td><input type="checkbox" name="person_ids" value="{{ p.id }}"></td>
+                                    <td><strong>{{ p.name }}</strong></td>
+                                    <td>
+                                        {% if p.standing_team %}
+                                            <span style="color:#1976d2; font-weight:bold;">{{ p.standing_team.name }}</span>
+                                        {% else %}
+                                            <span style="color:#ccc;">(무소속)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ p.default_role }}</td>
+                                    <td>
+                                        <a href="{% url 'core:personnel_edit' p.pk %}" style="text-decoration:none; color:#555;">수정</a>
+                                        <span style="color:#ddd;">|</span>
+                                        <a href="{% url 'core:personnel_delete' p.pk %}" onclick="return confirm('정말 삭제합니까?')" style="text-decoration:none; color:red;">삭제</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+                </div>
+        </div>
+    </div>
+</body>
+</html>

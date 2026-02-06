@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>전체 일정</title>
+<style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f6f8; margin: 0; }
+    /* 너비 제한 해제: 화면의 98% 사용 */
+    .container { width: 98%; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-sizing: border-box; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; font-size: 1.1em; }
+    th { background: #f8f9fa; font-weight: bold; color: #444; }
+    tr:hover { background: #f1f1f1; cursor: pointer; }
+
+    .home-btn { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #555; font-weight: bold; font-size: 1.2em; }
+    .badge { padding: 6px 12px; border-radius: 15px; color: white; font-size: 0.9em; }
+    .pending { background: #ffc107; color: #333; } .approved { background: #28a745; }
+    .rejected { background: #dc3545; } .canceled { background: #6c757d; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'core:main_hub' %}" class="home-btn">🏠 홈으로</a>
+        <h2 style="margin-top:0;">📅 전체 공연 리스트</h2>
+        <table>
+            <colgroup>
+                <col style="width: 15%">
+                <col style="width: 40%">
+                <col style="width: 15%">
+                <col style="width: 15%">
+                <col style="width: 15%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>공연명</th>
+                    <th>장소</th>
+                    <th>장르</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in performances %}
+                <tr onclick="location.href='{% url 'core:performance_detail' p.pk %}'">
+                    <td>{{ p.date|date:"Y-m-d H:i" }}</td>
+                    <td style="font-weight:bold;">{{ p.title }}</td>
+                    <td>{{ p.venue }}</td>
+                    <td>{{ p.category }}</td>
+                    <td><span class="badge {{ p.status }}">{{ p.get_status_display }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

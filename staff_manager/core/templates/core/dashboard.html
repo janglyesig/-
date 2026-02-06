@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>공연 통합 관리</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f8f9fa; padding: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { text-align: center; color: #333; margin-bottom: 40px; }
+
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card {
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s; border: 1px solid #eee;
+            text-decoration: none; color: inherit; display: block;
+        }
+        .card:hover { transform: translateY(-5px); border-color: #007bff; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+
+        .card-title { font-size: 1.2em; font-weight: bold; margin-bottom: 10px; }
+        .card-date { color: #666; font-size: 0.9em; margin-bottom: 15px; }
+
+        .status-badge {
+            display: inline-block; padding: 5px 10px; border-radius: 20px;
+            font-size: 0.8em; font-weight: bold; color: white;
+        }
+        .status-pending { background-color: #ffc107; color: #333; }
+        .status-approved { background-color: #28a745; }
+        .status-canceled { background-color: #6c757d; }
+        .status-rejected { background-color: #dc3545; }
+
+        .admin-link {
+            display: block; text-align: center; margin-top: 40px;
+            color: #666; text-decoration: none;
+        }
+        .admin-link:hover { text-decoration: underline; color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 공연 인원 편성 대시보드</h1>
+
+        <div class="card-grid">
+            {% for perf in performances %}
+            <a href="{% url 'core:performance_detail' perf.pk %}" class="card">
+                <div class="card-title">{{ perf.title }}</div>
+                <div class="card-date">⏰ {{ perf.date|date:"Y년 m월 d일 H:i" }}</div>
+                <div>
+                    <span class="status-badge status-{{ perf.status }}">
+                        {{ perf.get_status_display }}
+                    </span>
+                </div>
+            </a>
+            {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #999;">
+                <p>예정된 공연이 없습니다.</p>
+                <p>관리자 페이지에서 CSV를 업로드해주세요.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="/admin/" class="admin-link">⚙️ 관리자 페이지로 이동 (편성 등록/수정)</a>
+    </div>
+</body>
+</html>

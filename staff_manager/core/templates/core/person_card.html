@@ -1,0 +1,13 @@
+<div class="card">
+    <span>{{ a.display_name }}</span>
+    <div style="display:flex; align-items:center;">
+        <form action="{% url 'core:update_assignment_role' a.pk %}" method="post">{% csrf_token %}
+            <select name="role_type" class="role-sel" onchange="this.form.submit()">
+                <option value="part_leader" {% if a.role_type == 'part_leader' %}selected{% endif %}>파트장</option>
+                <option value="team_leader" {% if a.role_type == 'team_leader' %}selected{% endif %}>팀장</option>
+                <option value="member" {% if a.role_type == 'member' %}selected{% endif %}>팀원</option>
+            </select>
+        </form>
+        <a href="{% url 'core:delete_assignment' a.pk %}" class="x-btn" onclick="return confirm('제외합니까?');">X</a>
+    </div>
+</div>
